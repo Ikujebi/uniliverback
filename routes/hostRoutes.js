@@ -1,4 +1,3 @@
-// routes/hostRoutes.js
 const express = require('express');
 const router = express.Router();
 const Appointment = require('../models/appointment');
@@ -30,7 +29,7 @@ router.put('/appointments/:id/accept', authenticate, async (req, res) => {
 // Reschedule an appointment (within 24 hours) - Protected route
 router.put('/appointments/:id/reschedule', authenticate, async (req, res) => {
   const appointmentId = req.params.id;
-  const newAppointmentTime = new Date(req.body.appointmentTime);
+  const newAppointmentTime = new Date(req.body.appointmentTime);  // The new time from client request
   const currentTime = new Date();
   const appointment = await Appointment.findById(appointmentId);
 
@@ -40,17 +39,22 @@ router.put('/appointments/:id/reschedule', authenticate, async (req, res) => {
 
   const timeDifference = (newAppointmentTime - currentTime) / (1000 * 60 * 60); // in hours
 
+  // Check if the reschedule is within 24 hours
   if (timeDifference < 24) {
     return res.status(400).send({ message: 'Cannot reschedule within 24 hours' });
   }
 
+  // Reschedule logic here
   appointment.appointmentTime = newAppointmentTime;
-  appointment.status = 'pending'; // Reset to pending for reapproval
+  appointment.status = 'pending'; // Set to pending to require approval again
   appointment.lastUpdated = currentTime;
 
-  await appointment.save();
-
-  res.status(200).send({ message: 'Appointment rescheduled successfully' });
+  try {
+    await appointment.save();
+    res.status(200).send({ message: 'Appointment rescheduled successfully' });
+  } catch (error) {
+    res.status(500).send({ message: 'Error rescheduling appointment', error: error.message });
+  }
 });
 
 // Cancel an appointment - Protected route
@@ -58,10 +62,23 @@ router.delete('/appointments/:id', authenticate, async (req, res) => {
   const appointmentId = req.params.id;
 
   try {
-    await Appointment.findByIdAndDelete(appointmentId);
-    res.status(200).send({ message: 'Appointment canceled successfully' });
+    const appointment = await Appointment.findById(appointmentId);
+
+    if (!appointment) {
+      return res.status(404).send({ message: 'Appointment not found' });
+    }
+
+    const timeDifference = (appointment.appointmentTime - new Date()) / (1000 * 60 * 60); // in hours
+
+    // Allow cancellation only within 24 hours
+    if (timeDifference < 24) {
+      await Appointment.findByIdAndDelete(appointmentId);
+      res.status(200).send({ message: 'Appointment canceled successfully' });
+    } else {
+      res.status(400).send({ message: 'Cannot cancel more than 24 hours before the appointment' });
+    }
   } catch (error) {
-    res.status(500).send({ message: 'Error canceling appointment' });
+    res.status(500).send({ message: 'Error canceling appointment', error: error.message });
   }
 });
 

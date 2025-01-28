@@ -1,7 +1,9 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+
 const appointmentRoutes = require('./routes/appointments');
 
 const app = express();
@@ -12,7 +14,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Database connection (Replace with your MongoDB URI)
-mongoose.connect('mongodb://localhost:27017/appointments', { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect('mongodb+srv://ikujebikehinde:ikujebi%402013@unicluster0.6m5dl.mongodb.net/')
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.log('Failed to connect to MongoDB:', err));
 

@@ -1,59 +1,8 @@
+// routes/hostRoutes.js
 const express = require('express');
-const jwt = require('jsonwebtoken');
-const Appointment = require('../models/appointment');
 const router = express.Router();
-
-// Static credentials (Email and Password)
-const STATIC_EMAIL = 'ayanfeeledumare@gmail.com'; // Change to your desired static email
-const STATIC_PASSWORD = 'password123'; // Change to your desired static password
-
-// Middleware to authenticate the token
-const authenticate = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1]; // Bearer token
-  if (!token) {
-    return res.status(401).send({ message: 'Unauthorized' });
-  }
-
-  jwt.verify(token, 'your_secret_key', (err, decoded) => {
-    if (err) {
-      return res.status(401).send({ message: 'Invalid or expired token' });
-    }
-    req.user = decoded; // Add user data to the request
-    next();
-  });
-};
-
-// Login route (Static email and password)
-router.post('/login', (req, res) => {
-  const { email, password } = req.body;
-
-  if (email === STATIC_EMAIL && password === STATIC_PASSWORD) {
-    // Valid credentials, issue JWT token
-    const token = jwt.sign({ userId: email }, 'your_secret_key', { expiresIn: '1h' });
-
-    return res.status(200).send({ message: 'Login successful', token });
-  } else {
-    return res.status(401).send({ message: 'Invalid email or password' });
-  }
-});
-
-// Book an appointment (by guest)
-router.post('/appointments', async (req, res) => {
-  const { guestName, guestEmail, hostName, appointmentTime } = req.body;
-
-  try {
-    const newAppointment = new Appointment({
-      guestName,
-      guestEmail,
-      hostName,
-      appointmentTime
-    });
-    await newAppointment.save();
-    res.status(201).send({ message: 'Appointment booked successfully' });
-  } catch (error) {
-    res.status(500).send({ message: 'Error booking appointment' });
-  }
-});
+const Appointment = require('../models/appointment');
+const authenticate = require('../middleware/authenticate'); // Assuming you move the authenticate middleware to a separate file
 
 // Accept an appointment (by host) - Protected route
 router.put('/appointments/:id/accept', authenticate, async (req, res) => {
@@ -146,12 +95,10 @@ router.get('/appointments', authenticate, async (req, res) => {
     }
 
     const appointments = await Appointment.find(query).sort({ appointmentTime: 1 }); // Sort by appointment time
-    console.log(appointments);
     res.status(200).send({ appointments });
   } catch (error) {
     res.status(500).send({ message: 'Error retrieving appointments', error: error.message });
   }
 });
-
 
 module.exports = router;

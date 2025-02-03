@@ -2,7 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 
-const STATIC_EMAIL = 'ayanfeeledumare@gmail.com'; // Change this for production
+const STATIC_EMAIL = 'ayanfeelefumare@gmail.com'; // Change this for production
 const STATIC_PASSWORD = 'password123'; // Use environment variables in production
 
 // Login route (Static email and password)
